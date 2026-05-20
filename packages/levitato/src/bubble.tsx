@@ -130,7 +130,9 @@ const Bubble = ({
   const zoneCenter = { x: globalThis.innerWidth / 2, y: globalThis.innerHeight - 70 }
   return (
     <MotionConfig reducedMotion='user'>
-      <div className='pointer-events-none fixed inset-0 z-[60]' data-levitato-bubble>
+      <div
+        data-levitato-bubble
+        style={{ inset: 0, pointerEvents: 'none', position: 'fixed', zIndex: 60 }}>
         <AnimatePresence>
           {dragging ? (
             <motion.div
@@ -151,15 +153,27 @@ const Bubble = ({
             <motion.dialog
               animate={{ opacity: 1, scale: 1, y: 0 }}
               aria-label={title ?? 'Settings'}
-              className={cn(
-                'pointer-events-auto fixed flex max-h-[min(480px,80vh)] w-72 flex-col overflow-hidden rounded-xl border border-border bg-popover/95 text-popover-foreground shadow-xl backdrop-blur-xl',
-                dock === 'right' ? 'origin-top-right' : 'origin-top-left'
-              )}
               exit={{ opacity: 0, scale: 0.94, y: -4 }}
               initial={{ opacity: 0, scale: 0.94, y: -4 }}
               key='popover'
               open
-              style={{ [dock === 'right' ? 'right' : 'left']: EDGE_MARGIN + BUBBLE_SIZE + 10, top: popoverTop }}
+              style={{
+                background: 'oklch(0.99 0 0)',
+                border: '1px solid oklch(0.92 0 0)',
+                borderRadius: 12,
+                boxShadow: '0 10px 32px rgba(0,0,0,0.15)',
+                color: 'oklch(0.15 0 0)',
+                display: 'flex',
+                flexDirection: 'column',
+                maxHeight: 'min(480px, 80vh)',
+                overflow: 'hidden',
+                pointerEvents: 'auto',
+                position: 'fixed',
+                transformOrigin: dock === 'right' ? 'top right' : 'top left',
+                width: 288,
+                [dock === 'right' ? 'right' : 'left']: EDGE_MARGIN + BUBBLE_SIZE + 10,
+                top: popoverTop
+              }}
               transition={POPOVER_SPRING}>
               {(title || trailing) ? (
                 <div className='flex items-center justify-between border-b border-border px-3 py-2'>
@@ -184,7 +198,7 @@ const Bubble = ({
           animate={{ opacity: 1, scale: dragging ? 1.1 : 1 }}
           aria-expanded={open}
           aria-label={title ?? 'Bubble'}
-          className='pointer-events-auto fixed top-0 left-0 flex items-center justify-center rounded-full bg-foreground text-background shadow-md transition-shadow hover:shadow-lg'
+          className='flex items-center justify-center rounded-full bg-foreground text-background shadow-md transition-shadow hover:shadow-lg'
           initial={{ opacity: 0, scale: 0.6 }}
           onPointerDown={e => {
             if (e.button !== 0 && e.pointerType === 'mouse') return
@@ -274,7 +288,19 @@ const Bubble = ({
             animate(y, targetY, { ...SPRING, velocity: vy })
             storage.set(storageKey, { x: computeRestingX(nextDock), y: targetY })
           }}
-          style={{ height: BUBBLE_SIZE, touchAction: 'none', width: BUBBLE_SIZE, x, y }}
+          style={{
+            background: 'oklch(0.18 0 0)',
+            color: 'oklch(0.98 0 0)',
+            height: BUBBLE_SIZE,
+            left: 0,
+            pointerEvents: 'auto',
+            position: 'fixed',
+            top: 0,
+            touchAction: 'none',
+            width: BUBBLE_SIZE,
+            x,
+            y
+          }}
           transition={SPRING}
           type='button'
           whileHover={{ scale: 1.08 }}
