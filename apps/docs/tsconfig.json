@@ -1,0 +1,9 @@
+{
+  "extends": "lintmax/tsconfig",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "collections/*": ["./.source/*"]
+    }
+  }
+}

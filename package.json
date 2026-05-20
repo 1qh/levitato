@@ -1,0 +1,49 @@
+{
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "readonly/*"
+  ],
+  "scripts": {
+    "action": "sh up.sh && bun run test",
+    "build": "turbo build --output-logs=errors-only",
+    "check": "lintmax check",
+    "clean": "sh clean.sh",
+    "dev": "turbo dev",
+    "fix": "turbo build --output-logs=errors-only && lintmax fix",
+    "postinstall": "sherif",
+    "prepare": "bunx simple-git-hooks",
+    "test": "turbo test --output-logs=errors-only"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "sh up.sh && git add -u"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "latest",
+    "@playwright/test": "latest",
+    "@tailwindcss/postcss": "latest",
+    "@tailwindcss/typography": "latest",
+    "@testing-library/react": "latest",
+    "@turbo/gen": "latest",
+    "lintmax": "latest",
+    "playwright-core": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "sherif": "latest",
+    "simple-git-hooks": "latest",
+    "tsdown": "latest",
+    "turbo": "latest",
+    "typescript": "latest",
+    "unrun": "latest"
+  },
+  "packageManager": "bun@1.3.13",
+  "trustedDependencies": [
+    "esbuild",
+    "lintmax",
+    "msw",
+    "sharp",
+    "simple-git-hooks"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "buildCommand": "turbo build --filter=docs",
+  "framework": "nextjs",
+  "installCommand": "bun i",
+  "outputDirectory": "apps/docs/.next"
+}

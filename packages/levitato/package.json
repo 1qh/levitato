@@ -1,0 +1,46 @@
+{
+  "name": "levitato",
+  "version": "0.0.1",
+  "description": "Floating draggable bubble for React. Snap, hotkey, popover. Generic.",
+  "keywords": [
+    "react",
+    "bubble",
+    "floating",
+    "draggable",
+    "popover",
+    "panel"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1qh/levitato"
+  },
+  "license": "MIT",
+  "author": "1qh",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "bun run build",
+    "postpublish": "bunx pm4ai@latest cleanup"
+  },
+  "dependencies": {
+    "clsx": "latest",
+    "motion": "latest",
+    "tailwind-merge": "latest"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19"
+  }
+}
