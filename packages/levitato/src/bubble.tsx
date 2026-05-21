@@ -1,5 +1,4 @@
-/** biome-ignore-all lint/suspicious/noEmptyBlockStatements: intentional empty catch */
-/* eslint-disable no-empty, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
+/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 'use client'
 import type { ReactNode } from 'react'
 import { animate, AnimatePresence, motion, MotionConfig, useMotionValue } from 'motion/react'
@@ -8,16 +7,19 @@ import type { StorageAdapter } from './storage'
 import { cn } from './cn'
 import { matchesHotkey } from './hotkey'
 import { localStorageAdapter } from './storage'
+
 const BUBBLE_SIZE = 40
 const EDGE_MARGIN = 12
-const DISMISS_RADIUS = 80
+const POPOVER_WIDTH = 288
+const POPOVER_GAP = 10
+const ZONE_BOTTOM = 56
+const ZONE_SIZE = 56
+const DISMISS_RADIUS = 72
 const MAGNET_STRENGTH = 0.35
 const SPRING = { damping: 28, mass: 0.8, stiffness: 320, type: 'spring' as const }
 const POPOVER_SPRING = { damping: 28, mass: 0.7, stiffness: 380, type: 'spring' as const }
 const vibrate = (pattern: number | number[]) => {
-  try {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(pattern)
-  } catch {}
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(pattern)
 }
 const computeRestingX = (dock: 'left' | 'right') =>
   dock === 'right' ? globalThis.innerWidth - BUBBLE_SIZE - EDGE_MARGIN : EDGE_MARGIN
@@ -36,8 +38,10 @@ const CloseIcon = () => (
 interface BubbleProps {
   children?: ReactNode
   className?: string
+  dismissible?: boolean
   hotkey?: false | string
   icon?: ReactNode
+  onDismiss?: () => void
   onOpenChange?: (open: boolean) => void
   open?: boolean
   storage?: StorageAdapter
@@ -50,8 +54,10 @@ interface BubbleProps {
 const Bubble = ({
   children,
   className,
+  dismissible = true,
   hotkey = 'mod+k',
   icon,
+  onDismiss,
   onOpenChange,
   open: openProp,
   storage = localStorageAdapter,
@@ -72,39 +78,41 @@ const Bubble = ({
   const [dock, setDock] = useState<'left' | 'right'>('right')
   const [dragging, setDragging] = useState(false)
   const [overDismiss, setOverDismiss] = useState(false)
+  const [hidden, setHidden] = useState(false)
   const [mounted, setMounted] = useState(false)
   const overDismissRef = useRef(false)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
-  const pointerRef = useRef<null | {
-    did: boolean
-    id: number
-    ox: number
-    oy: number
-    samples: { t: number; x: number; y: number }[]
-    startX: number
-    startY: number
-  }>(null)
-  useEffect(() => {
-    setMounted(true)
+  const pointerRef = useRef<null | { did: boolean; id: number; ox: number; oy: number; startX: number; startY: number }>(
+    null
+  )
+  const resetPosition = () => {
     const saved = storage.get(storageKey)
     const initialY = saved?.y ?? globalThis.innerHeight / 2 - BUBBLE_SIZE / 2
     const initialDock: 'left' | 'right' = saved && saved.x + BUBBLE_SIZE / 2 < globalThis.innerWidth / 2 ? 'left' : 'right'
     setDock(initialDock)
     x.set(computeRestingX(initialDock))
     y.set(initialY)
+  }
+  useEffect(() => {
+    setMounted(true)
+    resetPosition()
   }, [storage, storageKey, x, y])
   useEffect(() => {
     if (hotkey === false) return
     const shortcut = (e: KeyboardEvent) => {
-      if (matchesHotkey(e, hotkey)) {
-        e.preventDefault()
-        setOpen(p => !p)
+      if (!matchesHotkey(e, hotkey)) return
+      e.preventDefault()
+      if (hidden) {
+        setHidden(false)
+        resetPosition()
+        return
       }
+      setOpen(p => !p)
     }
     globalThis.addEventListener('keydown', shortcut)
     return () => globalThis.removeEventListener('keydown', shortcut)
-  }, [hotkey])
+  }, [hidden, hotkey])
   useEffect(() => {
     if (!open) return
     const keyHandler = (e: KeyboardEvent) => {
@@ -122,28 +130,28 @@ const Bubble = ({
       globalThis.removeEventListener('mousedown', clickHandler)
     }
   }, [open])
-  if (!(mounted && visible)) return null
-  const POPOVER_WIDTH = 288
-  const POPOVER_GAP = 10
+  if (!(mounted && visible) || hidden) return null
   const popoverTop = Math.max(EDGE_MARGIN, Math.min(globalThis.innerHeight - 280, y.get()))
   const popoverLeft =
     dock === 'right'
       ? Math.max(EDGE_MARGIN, x.get() - POPOVER_WIDTH - POPOVER_GAP)
       : Math.min(globalThis.innerWidth - POPOVER_WIDTH - EDGE_MARGIN, x.get() + BUBBLE_SIZE + POPOVER_GAP)
-  const zoneCenter = { x: globalThis.innerWidth / 2, y: globalThis.innerHeight - 70 }
+  const zoneCenter = { x: globalThis.innerWidth / 2, y: globalThis.innerHeight - ZONE_BOTTOM }
+  const hasHeader = Boolean(title) || Boolean(trailing)
   return (
     <MotionConfig reducedMotion='user'>
       <div data-levitato-bubble style={{ inset: 0, pointerEvents: 'none', position: 'fixed', zIndex: 60 }}>
         <AnimatePresence>
-          {dragging ? (
+          {dragging && dismissible ? (
             <motion.div
-              animate={{ opacity: 1, scale: overDismiss ? 1.3 : 1, y: 0 }}
+              animate={{ opacity: 1, scale: overDismiss ? 1.25 : 1 }}
               className={cn(
-                'pointer-events-none fixed bottom-10 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full text-white shadow-lg',
-                overDismiss ? 'bg-red-600 shadow-[0_0_32px_rgba(239,68,68,0.55)]' : 'bg-red-500/75'
+                'pointer-events-none fixed left-1/2 flex -translate-x-1/2 items-center justify-center rounded-full text-white shadow-lg',
+                overDismiss ? 'bg-red-600 shadow-[0_0_32px_rgba(239,68,68,0.55)]' : 'bg-red-500/70'
               )}
-              exit={{ opacity: 0, y: 60 }}
-              initial={{ opacity: 0, y: 60 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+              initial={{ opacity: 0, scale: 0.6 }}
+              style={{ bottom: ZONE_BOTTOM - ZONE_SIZE / 2, height: ZONE_SIZE, width: ZONE_SIZE }}
               transition={SPRING}>
               <CloseIcon />
             </motion.div>
@@ -153,7 +161,7 @@ const Bubble = ({
           {open && children ? (
             <motion.dialog
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              aria-label={title ?? 'Settings'}
+              aria-label={title ?? 'Panel'}
               className={cn(
                 'flex flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl',
                 dock === 'right' ? 'origin-top-right' : 'origin-top-left'
@@ -171,7 +179,7 @@ const Bubble = ({
                 width: POPOVER_WIDTH
               }}
               transition={POPOVER_SPRING}>
-              {title || trailing ? (
+              {hasHeader ? (
                 <div className='flex items-center justify-between border-b border-border px-3 py-2'>
                   <span className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>{title}</span>
                   <div className='flex items-center gap-1'>
@@ -207,7 +215,6 @@ const Bubble = ({
               id: e.pointerId,
               ox: e.clientX - x.get(),
               oy: e.clientY - y.get(),
-              samples: [{ t: performance.now(), x: x.get(), y: y.get() }],
               startX: e.clientX,
               startY: e.clientY
             }
@@ -229,60 +236,49 @@ const Bubble = ({
             const maxY = globalThis.innerHeight - BUBBLE_SIZE - EDGE_MARGIN / 2
             let nx = Math.max(minX, Math.min(maxX, e.clientX - p.ox))
             let ny = Math.max(minY, Math.min(maxY, e.clientY - p.oy))
-            const bcx = nx + BUBBLE_SIZE / 2
-            const bcy = ny + BUBBLE_SIZE / 2
-            const zdx = bcx - zoneCenter.x
-            const zdy = bcy - zoneCenter.y
-            const zdist2 = zdx * zdx + zdy * zdy
-            const inside = zdist2 < DISMISS_RADIUS * DISMISS_RADIUS
-            if (inside !== overDismissRef.current) {
-              overDismissRef.current = inside
-              setOverDismiss(inside)
-              if (inside) vibrate(15)
-            }
-            if (inside) {
-              const k = MAGNET_STRENGTH * (1 - Math.sqrt(zdist2) / DISMISS_RADIUS)
-              nx += (zoneCenter.x - BUBBLE_SIZE / 2 - nx) * k
-              ny += (zoneCenter.y - BUBBLE_SIZE / 2 - ny) * k
+            if (dismissible) {
+              const bcx = nx + BUBBLE_SIZE / 2
+              const bcy = ny + BUBBLE_SIZE / 2
+              const zdist2 = (bcx - zoneCenter.x) ** 2 + (bcy - zoneCenter.y) ** 2
+              const inside = zdist2 < DISMISS_RADIUS * DISMISS_RADIUS
+              if (inside !== overDismissRef.current) {
+                overDismissRef.current = inside
+                setOverDismiss(inside)
+                if (inside) vibrate(15)
+              }
+              if (inside) {
+                const k = MAGNET_STRENGTH * (1 - Math.sqrt(zdist2) / DISMISS_RADIUS)
+                nx += (zoneCenter.x - BUBBLE_SIZE / 2 - nx) * k
+                ny += (zoneCenter.y - BUBBLE_SIZE / 2 - ny) * k
+              }
             }
             x.set(nx)
             y.set(ny)
-            p.samples.push({ t: performance.now(), x: nx, y: ny })
-            if (p.samples.length > 5) p.samples.shift()
           }}
           onPointerUp={e => {
             const p = pointerRef.current
             if (p?.id !== e.pointerId) return
             pointerRef.current = null
-            try {
-              e.currentTarget.releasePointerCapture(e.pointerId)
-            } catch {}
+            e.currentTarget.releasePointerCapture(e.pointerId)
             if (!p.did) {
               setOpen(prev => !prev)
               return
             }
             setDragging(false)
-            const now = performance.now()
-            const fallback = p.samples[0] ?? { t: now, x: x.get(), y: y.get() }
-            const first = p.samples.find(s => now - s.t < 80) ?? fallback
-            const last = p.samples.at(-1) ?? fallback
-            const dt = Math.max(1, last.t - first.t)
-            const vx = ((last.x - first.x) / dt) * 1000
-            const vy = ((last.y - first.y) / dt) * 1000
             if (overDismissRef.current) {
-              vibrate([20, 40, 30])
               overDismissRef.current = false
               setOverDismiss(false)
+              vibrate([20, 40, 30])
+              setHidden(true)
+              onDismiss?.()
               return
             }
-            setOverDismiss(false)
-            const projectedX = x.get() + vx * 0.15
-            const nextDock: 'left' | 'right' = projectedX + BUBBLE_SIZE / 2 < globalThis.innerWidth / 2 ? 'left' : 'right'
+            const nextDock: 'left' | 'right' = x.get() + BUBBLE_SIZE / 2 < globalThis.innerWidth / 2 ? 'left' : 'right'
             const maxY = globalThis.innerHeight - BUBBLE_SIZE - EDGE_MARGIN
-            const targetY = Math.max(EDGE_MARGIN, Math.min(maxY, y.get() + vy * 0.05))
+            const targetY = Math.max(EDGE_MARGIN, Math.min(maxY, y.get()))
             setDock(nextDock)
-            animate(x, computeRestingX(nextDock), { ...SPRING, velocity: vx })
-            animate(y, targetY, { ...SPRING, velocity: vy })
+            animate(x, computeRestingX(nextDock), SPRING)
+            animate(y, targetY, SPRING)
             storage.set(storageKey, { x: computeRestingX(nextDock), y: targetY })
           }}
           style={{
