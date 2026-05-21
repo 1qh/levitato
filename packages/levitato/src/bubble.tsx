@@ -13,22 +13,6 @@ import { localStorageAdapter } from './storage'
 const vibrate = (pattern: number | number[]) => {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(pattern)
 }
-const isMac = typeof navigator !== 'undefined' && /mac/iu.test(navigator.userAgent)
-const KEY_SYMBOLS: Record<string, string> = {
-  alt: '⌥',
-  cmd: '⌘',
-  ctrl: 'Ctrl',
-  meta: '⌘',
-  mod: isMac ? '⌘' : 'Ctrl',
-  option: '⌥',
-  shift: '⇧'
-}
-const prettifyHotkey = (spec: string): string =>
-  spec
-    .split('+')
-    .map(p => p.trim())
-    .map(p => KEY_SYMBOLS[p.toLowerCase()] ?? (p.length === 1 ? p.toUpperCase() : p))
-    .join(' ')
 const restingX = (dock: 'left' | 'right', size: number, margin: number) =>
   dock === 'right' ? globalThis.innerWidth - size - margin : margin
 const DefaultIcon = () => (
@@ -152,33 +136,7 @@ const Bubble = ({
       globalThis.removeEventListener('mousedown', clickHandler)
     }
   }, [open])
-  if (!(mounted && visible)) return null
-  const hotkeyHint = hotkey === false ? null : prettifyHotkey(hotkey)
-  if (hidden)
-    return (
-      <MotionConfig reducedMotion='user'>
-        <AnimatePresence>
-          <motion.button
-            animate={{ opacity: 1, y: 0 }}
-            aria-label='Show bubble'
-            className='pointer-events-auto fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-popover px-4 py-2 text-xs font-medium text-popover-foreground shadow-lg'
-            exit={{ opacity: 0, y: 12 }}
-            initial={{ opacity: 0, y: 12 }}
-            onClick={() => {
-              setHidden(false)
-              resetPosition()
-            }}
-            transition={snapSpring}
-            type='button'>
-            <DefaultIcon />
-            <span>Bring back</span>
-            {hotkeyHint ? (
-              <kbd className='rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]'>{hotkeyHint}</kbd>
-            ) : null}
-          </motion.button>
-        </AnimatePresence>
-      </MotionConfig>
-    )
+  if (!(mounted && visible) || hidden) return null
   const wantBottom = y.get() + 300 > globalThis.innerHeight
   const popoverLeft =
     dock === 'right'
