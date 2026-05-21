@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@tweakpane/core": "latest",
     "fumadocs-core": "latest",
     "fumadocs-mdx": "latest",
     "fumadocs-ui": "latest",
@@ -16,6 +17,7 @@
     "lucide-react": "latest",
     "next": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "tweakpane": "latest"
   }
 }

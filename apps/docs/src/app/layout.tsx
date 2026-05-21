@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { cn } from '@a/ui'
 import { mono, sans } from './fonts'
 import './global.css'
+import './extras.css'
 import { Providers } from './providers'
 
 const metadata: Metadata = {

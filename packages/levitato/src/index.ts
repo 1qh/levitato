@@ -1,4 +1,6 @@
 export { Bubble } from './bubble'
 export type { BubbleProps } from './bubble'
+export { defaultConfig, mergeConfig } from './config'
+export type { DeepPartial, LevitatoConfig, SpringConfig } from './config'
 export { localStorageAdapter } from './storage'
 export type { Pos, StorageAdapter } from './storage'

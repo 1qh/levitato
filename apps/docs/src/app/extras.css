@@ -1,0 +1,23 @@
+:root {
+  --tp-base-background-color: var(--color-fd-background);
+  --tp-base-shadow-color: rgba(0, 0, 0, 0.1);
+  --tp-button-background-color: var(--color-fd-muted);
+  --tp-button-background-color-active: var(--color-fd-accent);
+  --tp-button-background-color-focus: var(--color-fd-accent);
+  --tp-button-background-color-hover: var(--color-fd-accent);
+  --tp-button-foreground-color: var(--color-fd-foreground);
+  --tp-container-background-color: var(--color-fd-background);
+  --tp-container-background-color-active: var(--color-fd-accent);
+  --tp-container-background-color-focus: var(--color-fd-accent);
+  --tp-container-background-color-hover: var(--color-fd-accent);
+  --tp-container-foreground-color: var(--color-fd-foreground);
+  --tp-groove-foreground-color: var(--color-fd-border);
+  --tp-input-background-color: var(--color-fd-background);
+  --tp-input-background-color-active: var(--color-fd-background);
+  --tp-input-background-color-focus: var(--color-fd-background);
+  --tp-input-background-color-hover: var(--color-fd-accent);
+  --tp-input-foreground-color: var(--color-fd-foreground);
+  --tp-label-foreground-color: var(--color-fd-muted-foreground);
+  --tp-monitor-background-color: var(--color-fd-background);
+  --tp-monitor-foreground-color: var(--color-fd-foreground);
+}
