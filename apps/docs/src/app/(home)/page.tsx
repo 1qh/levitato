@@ -15,7 +15,9 @@ const Page = () => {
         href='/docs'>
         Get Started
       </Link>
-      <p className='text-sm text-fd-muted-foreground'>Drag the bubble. Press ⌘K. Activations: {count}</p>
+      <p className='text-sm text-fd-muted-foreground'>
+        Drag it · drop in the red zone to dismiss · press ⌘. to toggle or summon back · opened {count}×
+      </p>
       <Bubble onOpenChange={open => open && setCount(c => c + 1)} title='Demo'>
         <div className='px-4 py-3 text-sm'>
           <p className='text-fd-muted-foreground'>Any React content here.</p>

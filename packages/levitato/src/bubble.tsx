@@ -16,9 +16,26 @@ const DISMISS_RADIUS = 80
 const MAGNET_STRENGTH = 0.35
 const SPRING = { damping: 28, mass: 0.8, stiffness: 320, type: 'spring' as const }
 const POPOVER_SPRING = { damping: 28, mass: 0.7, stiffness: 380, type: 'spring' as const }
+const SUCTION = { damping: 18, mass: 0.6, stiffness: 520, type: 'spring' as const }
 const vibrate = (pattern: number | number[]) => {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(pattern)
 }
+const isMac = typeof navigator !== 'undefined' && /mac/iu.test(navigator.userAgent)
+const KEY_SYMBOLS: Record<string, string> = {
+  alt: '⌥',
+  cmd: '⌘',
+  ctrl: 'Ctrl',
+  meta: '⌘',
+  mod: isMac ? '⌘' : 'Ctrl',
+  option: '⌥',
+  shift: '⇧'
+}
+const prettifyHotkey = (spec: string): string =>
+  spec
+    .split('+')
+    .map(p => p.trim())
+    .map(p => KEY_SYMBOLS[p.toLowerCase()] ?? (p.length === 1 ? p.toUpperCase() : p))
+    .join(' ')
 const computeRestingX = (dock: 'left' | 'right') =>
   dock === 'right' ? globalThis.innerWidth - BUBBLE_SIZE - EDGE_MARGIN : EDGE_MARGIN
 const DefaultIcon = () => (
@@ -76,6 +93,7 @@ const Bubble = ({
   const [dock, setDock] = useState<'left' | 'right'>('right')
   const [dragging, setDragging] = useState(false)
   const [overDismiss, setOverDismiss] = useState(false)
+  const [dismissing, setDismissing] = useState(false)
   const [hidden, setHidden] = useState(false)
   const [mounted, setMounted] = useState(false)
   const overDismissRef = useRef(false)
@@ -134,21 +152,65 @@ const Bubble = ({
       globalThis.removeEventListener('mousedown', clickHandler)
     }
   }, [open])
-  if (!(mounted && visible) || hidden) return null
-  const popoverTop = Math.max(EDGE_MARGIN, Math.min(globalThis.innerHeight - 280, y.get()))
+  if (!(mounted && visible)) return null
+  const hotkeyHint = hotkey === false ? null : prettifyHotkey(hotkey)
+  if (hidden)
+    return (
+      <MotionConfig reducedMotion='user'>
+        <AnimatePresence>
+          <motion.button
+            animate={{ opacity: 1, y: 0 }}
+            aria-label='Show bubble'
+            className='pointer-events-auto fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-popover px-4 py-2 text-xs font-medium text-popover-foreground shadow-lg'
+            exit={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 12 }}
+            onClick={() => {
+              setHidden(false)
+              resetPosition()
+            }}
+            transition={SPRING}
+            type='button'>
+            <DefaultIcon />
+            <span>Bring back</span>
+            {hotkeyHint ? (
+              <kbd className='rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]'>{hotkeyHint}</kbd>
+            ) : null}
+          </motion.button>
+        </AnimatePresence>
+      </MotionConfig>
+    )
+
+  const wantBottom = y.get() + 300 > globalThis.innerHeight
   const popoverLeft =
     dock === 'right'
       ? Math.max(EDGE_MARGIN, x.get() - POPOVER_WIDTH - POPOVER_GAP)
       : Math.min(globalThis.innerWidth - POPOVER_WIDTH - EDGE_MARGIN, x.get() + BUBBLE_SIZE + POPOVER_GAP)
+  const popoverVertical = wantBottom
+    ? { bottom: Math.max(EDGE_MARGIN, globalThis.innerHeight - y.get() - BUBBLE_SIZE) }
+    : { top: Math.max(EDGE_MARGIN, Math.min(globalThis.innerHeight - 280, y.get())) }
+  const originClass =
+    dock === 'right'
+      ? wantBottom
+        ? 'origin-bottom-right'
+        : 'origin-top-right'
+      : wantBottom
+        ? 'origin-bottom-left'
+        : 'origin-top-left'
   const zoneCenter = { x: globalThis.innerWidth / 2, y: globalThis.innerHeight - 70 }
   const dismiss = () => {
     overDismissRef.current = false
     setOverDismiss(false)
     setDragging(false)
-    vibrate([20, 40, 30])
-    setHidden(true)
     setOpen(false)
-    onDismiss?.()
+    setDismissing(true)
+    vibrate([20, 40, 30])
+    animate(x, zoneCenter.x - BUBBLE_SIZE / 2, SUCTION)
+    animate(y, zoneCenter.y - BUBBLE_SIZE / 2, SUCTION)
+    globalThis.setTimeout(() => {
+      setDismissing(false)
+      setHidden(true)
+      onDismiss?.()
+    }, 260)
   }
   const hasHeader = Boolean(title) || Boolean(trailing)
   return (
@@ -176,13 +238,13 @@ const Bubble = ({
               aria-label={title ?? 'Panel'}
               className={cn(
                 'pointer-events-auto fixed flex max-h-[min(480px,80vh)] w-72 flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl',
-                dock === 'right' ? 'origin-top-right' : 'origin-top-left'
+                originClass
               )}
               exit={{ opacity: 0, scale: 0.94, y: -4 }}
               initial={{ opacity: 0, scale: 0.94, y: -4 }}
               key='popover'
               open
-              style={{ left: popoverLeft, top: popoverTop }}
+              style={{ left: popoverLeft, ...popoverVertical }}
               transition={POPOVER_SPRING}>
               {hasHeader ? (
                 <div className='flex items-center justify-between border-b border-border px-3 py-2'>
@@ -204,7 +266,7 @@ const Bubble = ({
           ) : null}
         </AnimatePresence>
         <motion.button
-          animate={{ opacity: 1, scale: dragging ? 1.1 : 1 }}
+          animate={dismissing ? { opacity: 0, scale: 0 } : { opacity: 1, scale: dragging ? 1.1 : 1 }}
           aria-expanded={open}
           aria-label={title ?? 'Bubble'}
           className={cn(
