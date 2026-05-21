@@ -1,16 +1,16 @@
 /** biome-ignore-all lint/suspicious/noEmptyBlockStatements: intentional empty catch */
-/* eslint-disable @typescript-eslint/strict-void-return, no-empty, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
+/* eslint-disable no-empty, @eslint-react/hooks-extra/no-direct-set-state-in-use-effect */
 'use client'
 import type { ReactNode } from 'react'
 import { animate, AnimatePresence, motion, MotionConfig, useMotionValue } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
+import type { StorageAdapter } from './storage'
 import { cn } from './cn'
 import { matchesHotkey } from './hotkey'
-import { localStorageAdapter, type StorageAdapter } from './storage'
+import { localStorageAdapter } from './storage'
 const BUBBLE_SIZE = 40
 const EDGE_MARGIN = 12
 const DISMISS_RADIUS = 80
-const FLICK_VELOCITY = 1800
 const MAGNET_STRENGTH = 0.35
 const SPRING = { damping: 28, mass: 0.8, stiffness: 320, type: 'spring' as const }
 const POPOVER_SPRING = { damping: 28, mass: 0.7, stiffness: 380, type: 'spring' as const }
@@ -64,7 +64,7 @@ const Bubble = ({
   const controlled = openProp !== undefined
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlled ? openProp : internalOpen
-  const setOpen = (next: boolean | ((p: boolean) => boolean)) => {
+  const setOpen = (next: ((p: boolean) => boolean) | boolean) => {
     const value = typeof next === 'function' ? next(open) : next
     if (!controlled) setInternalOpen(value)
     onOpenChange?.(value)
@@ -89,8 +89,7 @@ const Bubble = ({
     setMounted(true)
     const saved = storage.get(storageKey)
     const initialY = saved?.y ?? globalThis.innerHeight / 2 - BUBBLE_SIZE / 2
-    const initialDock: 'left' | 'right' =
-      saved && saved.x + BUBBLE_SIZE / 2 < globalThis.innerWidth / 2 ? 'left' : 'right'
+    const initialDock: 'left' | 'right' = saved && saved.x + BUBBLE_SIZE / 2 < globalThis.innerWidth / 2 ? 'left' : 'right'
     setDock(initialDock)
     x.set(computeRestingX(initialDock))
     y.set(initialY)
@@ -134,9 +133,7 @@ const Bubble = ({
   const zoneCenter = { x: globalThis.innerWidth / 2, y: globalThis.innerHeight - 70 }
   return (
     <MotionConfig reducedMotion='user'>
-      <div
-        data-levitato-bubble
-        style={{ inset: 0, pointerEvents: 'none', position: 'fixed', zIndex: 60 }}>
+      <div data-levitato-bubble style={{ inset: 0, pointerEvents: 'none', position: 'fixed', zIndex: 60 }}>
         <AnimatePresence>
           {dragging ? (
             <motion.div
@@ -174,7 +171,7 @@ const Bubble = ({
                 width: POPOVER_WIDTH
               }}
               transition={POPOVER_SPRING}>
-              {(title || trailing) ? (
+              {title || trailing ? (
                 <div className='flex items-center justify-between border-b border-border px-3 py-2'>
                   <span className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>{title}</span>
                   <div className='flex items-center gap-1'>
@@ -272,14 +269,12 @@ const Bubble = ({
             const dt = Math.max(1, last.t - first.t)
             const vx = ((last.x - first.x) / dt) * 1000
             const vy = ((last.y - first.y) / dt) * 1000
-            const speed = Math.hypot(vx, vy)
-            if (overDismissRef.current || speed > FLICK_VELOCITY) {
+            if (overDismissRef.current) {
               vibrate([20, 40, 30])
               overDismissRef.current = false
               setOverDismiss(false)
               return
             }
-            overDismissRef.current = false
             setOverDismiss(false)
             const projectedX = x.get() + vx * 0.15
             const nextDock: 'left' | 'right' = projectedX + BUBBLE_SIZE / 2 < globalThis.innerWidth / 2 ? 'left' : 'right'

@@ -2,6 +2,7 @@
 import { Bubble } from 'levitato'
 import Link from 'next/link'
 import { useState } from 'react'
+
 const Page = () => {
   const [count, setCount] = useState(0)
   return (

@@ -19,7 +19,7 @@ const localStorageAdapter: StorageAdapter = {
     try {
       globalThis.localStorage.setItem(key, JSON.stringify(pos))
     } catch {
-      /* noop */
+      /* Noop */
     }
   }
 }

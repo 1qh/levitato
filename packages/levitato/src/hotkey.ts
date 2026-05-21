@@ -1,5 +1,8 @@
 const matchesHotkey = (e: KeyboardEvent, spec: string): boolean => {
-  const parts = spec.toLowerCase().split('+').map(p => p.trim())
+  const parts = spec
+    .toLowerCase()
+    .split('+')
+    .map(p => p.trim())
   const key = parts.at(-1) ?? ''
   const mods = new Set(parts.slice(0, -1))
   const wantMod = mods.has('mod') || mods.has('cmd') || mods.has('meta')

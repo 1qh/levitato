@@ -1,6 +1,6 @@
 {
   "name": "levitato",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Floating draggable bubble for React. Snap, hotkey, popover. Generic.",
   "keywords": [
     "react",
