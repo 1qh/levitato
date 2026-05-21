@@ -28,8 +28,8 @@ const DefaultIcon = () => (
     <circle cx='20' cy='3' r='2' />
   </svg>
 )
-const CloseIcon = ({ size = 14 }: { size?: number }) => (
-  <svg aria-hidden='true' fill='none' height={size} stroke='currentColor' strokeWidth='2' viewBox='0 0 24 24' width={size}>
+const CloseIcon = ({ className = 'size-3.5' }: { className?: string }) => (
+  <svg aria-hidden='true' className={className} fill='none' stroke='currentColor' strokeWidth='2' viewBox='0 0 24 24'>
     <path d='M6 6l12 12M6 18L18 6' strokeLinecap='round' />
   </svg>
 )
@@ -153,31 +153,19 @@ const Bubble = ({
   const hasHeader = Boolean(title) || Boolean(trailing)
   return (
     <MotionConfig reducedMotion='user'>
-      <div data-levitato-bubble style={{ inset: 0, pointerEvents: 'none', position: 'fixed', zIndex: 60 }}>
+      <div className='pointer-events-none fixed inset-0 z-[60]' data-levitato-bubble>
         <AnimatePresence>
           {dragging && dismissible ? (
             <motion.div
               animate={{ opacity: 1, scale: overDismiss ? 1.3 : 1, y: 0 }}
+              className={cn(
+                'pointer-events-none fixed bottom-10 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full text-white shadow-lg',
+                overDismiss ? 'bg-red-600 shadow-[0_0_32px_rgba(239,68,68,0.55)]' : 'bg-red-500/75'
+              )}
               exit={{ opacity: 0, y: 60 }}
               initial={{ opacity: 0, y: 60 }}
-              style={{
-                alignItems: 'center',
-                background: overDismiss ? '#dc2626' : 'rgba(239,68,68,0.75)',
-                borderRadius: '9999px',
-                bottom: 40,
-                boxShadow: overDismiss ? '0 0 32px rgba(239,68,68,0.55)' : '0 4px 6px rgba(0,0,0,0.2)',
-                color: '#fff',
-                display: 'flex',
-                height: 56,
-                justifyContent: 'center',
-                left: '50%',
-                pointerEvents: 'none',
-                position: 'fixed',
-                transform: 'translateX(-50%)',
-                width: 56
-              }}
               transition={SPRING}>
-              <CloseIcon size={20} />
+              <CloseIcon className='size-5' />
             </motion.div>
           ) : null}
         </AnimatePresence>
@@ -187,21 +175,14 @@ const Bubble = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               aria-label={title ?? 'Panel'}
               className={cn(
-                'flex flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl',
+                'pointer-events-auto fixed flex max-h-[min(480px,80vh)] w-72 flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl',
                 dock === 'right' ? 'origin-top-right' : 'origin-top-left'
               )}
               exit={{ opacity: 0, scale: 0.94, y: -4 }}
               initial={{ opacity: 0, scale: 0.94, y: -4 }}
               key='popover'
               open
-              style={{
-                left: popoverLeft,
-                maxHeight: 'min(480px, 80vh)',
-                pointerEvents: 'auto',
-                position: 'fixed',
-                top: popoverTop,
-                width: POPOVER_WIDTH
-              }}
+              style={{ left: popoverLeft, top: popoverTop }}
               transition={POPOVER_SPRING}>
               {hasHeader ? (
                 <div className='flex items-center justify-between border-b border-border px-3 py-2'>
@@ -227,7 +208,7 @@ const Bubble = ({
           aria-expanded={open}
           aria-label={title ?? 'Bubble'}
           className={cn(
-            'flex items-center justify-center rounded-full bg-foreground text-background shadow-lg outline-none hover:shadow-xl',
+            'pointer-events-auto fixed top-0 left-0 flex size-10 cursor-pointer touch-none items-center justify-center rounded-full bg-foreground text-background shadow-lg outline-none hover:shadow-xl',
             className
           )}
           initial={{ opacity: 0, scale: 0.6 }}
@@ -316,19 +297,7 @@ const Bubble = ({
             animate(y, targetY, { ...SPRING, velocity: vy })
             storage.set(storageKey, { x: computeRestingX(nextDock), y: targetY })
           }}
-          style={{
-            cursor: 'pointer',
-            height: BUBBLE_SIZE,
-            left: 0,
-            pointerEvents: 'auto',
-            position: 'fixed',
-            top: 0,
-            touchAction: 'none',
-            width: BUBBLE_SIZE,
-            x,
-            y,
-            ...styleProp
-          }}
+          style={{ x, y, ...styleProp }}
           transition={SPRING}
           type='button'
           whileHover={{ scale: 1.08 }}
