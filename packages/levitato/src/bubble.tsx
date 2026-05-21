@@ -22,16 +22,10 @@ const vibrate = (pattern: number | number[]) => {
 const computeRestingX = (dock: 'left' | 'right') =>
   dock === 'right' ? globalThis.innerWidth - BUBBLE_SIZE - EDGE_MARGIN : EDGE_MARGIN
 const DefaultIcon = () => (
-  <svg aria-hidden='true' className='size-[18px]' fill='none' stroke='currentColor' strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' viewBox='0 0 24 24'>
-    <line x1='4' x2='4' y1='21' y2='14' />
-    <line x1='4' x2='4' y1='10' y2='3' />
-    <line x1='12' x2='12' y1='21' y2='12' />
-    <line x1='12' x2='12' y1='8' y2='3' />
-    <line x1='20' x2='20' y1='21' y2='16' />
-    <line x1='20' x2='20' y1='12' y2='3' />
-    <line x1='1' x2='7' y1='14' y2='14' />
-    <line x1='9' x2='15' y1='8' y2='8' />
-    <line x1='17' x2='23' y1='16' y2='16' />
+  <svg aria-hidden='true' fill='currentColor' height='6' viewBox='0 0 24 6' width='22'>
+    <circle cx='4' cy='3' r='2' />
+    <circle cx='12' cy='3' r='2' />
+    <circle cx='20' cy='3' r='2' />
   </svg>
 )
 const CloseIcon = () => (
@@ -41,24 +35,28 @@ const CloseIcon = () => (
 )
 interface BubbleProps {
   children?: ReactNode
+  className?: string
   hotkey?: false | string
   icon?: ReactNode
   onOpenChange?: (open: boolean) => void
   open?: boolean
   storage?: StorageAdapter
   storageKey?: string
+  style?: React.CSSProperties
   title?: string
   trailing?: ReactNode
   visible?: boolean
 }
 const Bubble = ({
   children,
+  className,
   hotkey = 'mod+k',
   icon,
   onOpenChange,
   open: openProp,
   storage = localStorageAdapter,
   storageKey = 'levitato:bubble',
+  style: styleProp,
   title,
   trailing,
   visible = true
@@ -126,7 +124,13 @@ const Bubble = ({
     }
   }, [open])
   if (!(mounted && visible)) return null
+  const POPOVER_WIDTH = 288
+  const POPOVER_GAP = 10
   const popoverTop = Math.max(EDGE_MARGIN, Math.min(globalThis.innerHeight - 280, y.get()))
+  const popoverLeft =
+    dock === 'right'
+      ? Math.max(EDGE_MARGIN, x.get() - POPOVER_WIDTH - POPOVER_GAP)
+      : Math.min(globalThis.innerWidth - POPOVER_WIDTH - EDGE_MARGIN, x.get() + BUBBLE_SIZE + POPOVER_GAP)
   const zoneCenter = { x: globalThis.innerWidth / 2, y: globalThis.innerHeight - 70 }
   return (
     <MotionConfig reducedMotion='user'>
@@ -153,26 +157,21 @@ const Bubble = ({
             <motion.dialog
               animate={{ opacity: 1, scale: 1, y: 0 }}
               aria-label={title ?? 'Settings'}
+              className={cn(
+                'flex flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl',
+                dock === 'right' ? 'origin-top-right' : 'origin-top-left'
+              )}
               exit={{ opacity: 0, scale: 0.94, y: -4 }}
               initial={{ opacity: 0, scale: 0.94, y: -4 }}
               key='popover'
               open
               style={{
-                background: 'oklch(0.99 0 0)',
-                border: '1px solid oklch(0.92 0 0)',
-                borderRadius: 12,
-                boxShadow: '0 10px 32px rgba(0,0,0,0.15)',
-                color: 'oklch(0.15 0 0)',
-                display: 'flex',
-                flexDirection: 'column',
+                left: popoverLeft,
                 maxHeight: 'min(480px, 80vh)',
-                overflow: 'hidden',
                 pointerEvents: 'auto',
                 position: 'fixed',
-                transformOrigin: dock === 'right' ? 'top right' : 'top left',
-                width: 288,
-                [dock === 'right' ? 'right' : 'left']: EDGE_MARGIN + BUBBLE_SIZE + 10,
-                top: popoverTop
+                top: popoverTop,
+                width: POPOVER_WIDTH
               }}
               transition={POPOVER_SPRING}>
               {(title || trailing) ? (
@@ -198,7 +197,10 @@ const Bubble = ({
           animate={{ opacity: 1, scale: dragging ? 1.1 : 1 }}
           aria-expanded={open}
           aria-label={title ?? 'Bubble'}
-          className='flex items-center justify-center rounded-full bg-foreground text-background shadow-md transition-shadow hover:shadow-lg'
+          className={cn(
+            'flex items-center justify-center rounded-full bg-foreground text-background shadow-lg outline-none hover:shadow-xl',
+            className
+          )}
           initial={{ opacity: 0, scale: 0.6 }}
           onPointerDown={e => {
             if (e.button !== 0 && e.pointerType === 'mouse') return
@@ -289,8 +291,7 @@ const Bubble = ({
             storage.set(storageKey, { x: computeRestingX(nextDock), y: targetY })
           }}
           style={{
-            background: 'oklch(0.18 0 0)',
-            color: 'oklch(0.98 0 0)',
+            cursor: 'pointer',
             height: BUBBLE_SIZE,
             left: 0,
             pointerEvents: 'auto',
@@ -299,7 +300,8 @@ const Bubble = ({
             touchAction: 'none',
             width: BUBBLE_SIZE,
             x,
-            y
+            y,
+            ...styleProp
           }}
           transition={SPRING}
           type='button'

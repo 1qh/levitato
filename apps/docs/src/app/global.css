@@ -1,6 +1,14 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+@source '../../../../node_modules/levitato/dist';
+@theme inline {
+  --color-foreground: var(--color-fd-foreground);
+  --color-background: var(--color-fd-background);
+  --color-popover: var(--color-fd-popover);
+  --color-popover-foreground: var(--color-fd-popover-foreground);
+  --color-border: var(--color-fd-border);
+}
 .dark {
   --color-fd-background: hsl(0, 0%, 0%);
   --color-fd-card: hsl(0, 0%, 5%);
