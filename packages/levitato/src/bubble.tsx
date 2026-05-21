@@ -28,8 +28,8 @@ const DefaultIcon = () => (
     <circle cx='20' cy='3' r='2' />
   </svg>
 )
-const CloseIcon = ({ className = 'size-3.5' }: { className?: string }) => (
-  <svg aria-hidden='true' className={className} fill='none' stroke='currentColor' strokeWidth='2' viewBox='0 0 24 24'>
+const CloseIcon = ({ size = 14 }: { size?: number }) => (
+  <svg aria-hidden='true' fill='none' height={size} stroke='currentColor' strokeWidth='2' viewBox='0 0 24 24' width={size}>
     <path d='M6 6l12 12M6 18L18 6' strokeLinecap='round' />
   </svg>
 )
@@ -158,14 +158,26 @@ const Bubble = ({
           {dragging && dismissible ? (
             <motion.div
               animate={{ opacity: 1, scale: overDismiss ? 1.3 : 1, y: 0 }}
-              className={cn(
-                'pointer-events-none fixed bottom-10 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full text-white shadow-lg',
-                overDismiss ? 'bg-red-600 shadow-[0_0_32px_rgba(239,68,68,0.55)]' : 'bg-red-500/75'
-              )}
               exit={{ opacity: 0, y: 60 }}
               initial={{ opacity: 0, y: 60 }}
+              style={{
+                alignItems: 'center',
+                background: overDismiss ? '#dc2626' : 'rgba(239,68,68,0.75)',
+                borderRadius: '9999px',
+                bottom: 40,
+                boxShadow: overDismiss ? '0 0 32px rgba(239,68,68,0.55)' : '0 4px 6px rgba(0,0,0,0.2)',
+                color: '#fff',
+                display: 'flex',
+                height: 56,
+                justifyContent: 'center',
+                left: '50%',
+                pointerEvents: 'none',
+                position: 'fixed',
+                transform: 'translateX(-50%)',
+                width: 56
+              }}
               transition={SPRING}>
-              <CloseIcon className='size-5' />
+              <CloseIcon size={20} />
             </motion.div>
           ) : null}
         </AnimatePresence>
