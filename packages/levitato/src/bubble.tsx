@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: effects key off specific deps by design */
 /* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/exhaustive-deps, complexity */
-/* oxlint-disable react-hooks/exhaustive-deps, react-perf/jsx-no-new-object-as-prop, complexity */
+/* oxlint-disable react-perf/jsx-no-new-object-as-prop */
 'use client'
 import type { ReactNode } from 'react'
 import { animate, AnimatePresence, motion, MotionConfig, useMotionValue } from 'motion/react'
