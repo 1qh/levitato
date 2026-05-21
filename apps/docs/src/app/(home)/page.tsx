@@ -26,15 +26,20 @@ const Page = () => {
           or
           <button
             className='rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90'
-            onClick={() =>
+            onClick={() => {
               globalThis.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: '.', metaKey: true }))
-            }
+            }}
             type='button'>
             bring it back
           </button>
         </p>
       ) : null}
-      <Bubble config={config} onDismiss={() => setDismissed(true)} onOpenChange={open => open && setDismissed(false)}>
+      <Bubble
+        config={config}
+        onDismiss={() => setDismissed(true)}
+        onOpenChange={open => {
+          if (open) setDismissed(false)
+        }}>
         <TweakPanel onChange={setConfig} />
       </Bubble>
     </div>
