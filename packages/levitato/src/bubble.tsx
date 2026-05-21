@@ -12,9 +12,7 @@ const BUBBLE_SIZE = 40
 const EDGE_MARGIN = 12
 const POPOVER_WIDTH = 288
 const POPOVER_GAP = 10
-const ZONE_BOTTOM = 56
-const ZONE_SIZE = 56
-const DISMISS_RADIUS = 72
+const DISMISS_RADIUS = 80
 const MAGNET_STRENGTH = 0.35
 const SPRING = { damping: 28, mass: 0.8, stiffness: 320, type: 'spring' as const }
 const POPOVER_SPRING = { damping: 28, mass: 0.7, stiffness: 380, type: 'spring' as const }
@@ -30,8 +28,8 @@ const DefaultIcon = () => (
     <circle cx='20' cy='3' r='2' />
   </svg>
 )
-const CloseIcon = () => (
-  <svg aria-hidden='true' className='size-3.5' fill='none' stroke='currentColor' strokeWidth='2' viewBox='0 0 24 24'>
+const CloseIcon = ({ className = 'size-3.5' }: { className?: string }) => (
+  <svg aria-hidden='true' className={className} fill='none' stroke='currentColor' strokeWidth='2' viewBox='0 0 24 24'>
     <path d='M6 6l12 12M6 18L18 6' strokeLinecap='round' />
   </svg>
 )
@@ -55,7 +53,7 @@ const Bubble = ({
   children,
   className,
   dismissible = true,
-  hotkey = 'mod+k',
+  hotkey = 'mod+.',
   icon,
   onDismiss,
   onOpenChange,
@@ -83,9 +81,15 @@ const Bubble = ({
   const overDismissRef = useRef(false)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
-  const pointerRef = useRef<null | { did: boolean; id: number; ox: number; oy: number; startX: number; startY: number }>(
-    null
-  )
+  const pointerRef = useRef<null | {
+    did: boolean
+    id: number
+    ox: number
+    oy: number
+    samples: { t: number; x: number; y: number }[]
+    startX: number
+    startY: number
+  }>(null)
   const resetPosition = () => {
     const saved = storage.get(storageKey)
     const initialY = saved?.y ?? globalThis.innerHeight / 2 - BUBBLE_SIZE / 2
@@ -136,7 +140,16 @@ const Bubble = ({
     dock === 'right'
       ? Math.max(EDGE_MARGIN, x.get() - POPOVER_WIDTH - POPOVER_GAP)
       : Math.min(globalThis.innerWidth - POPOVER_WIDTH - EDGE_MARGIN, x.get() + BUBBLE_SIZE + POPOVER_GAP)
-  const zoneCenter = { x: globalThis.innerWidth / 2, y: globalThis.innerHeight - ZONE_BOTTOM }
+  const zoneCenter = { x: globalThis.innerWidth / 2, y: globalThis.innerHeight - 70 }
+  const dismiss = () => {
+    overDismissRef.current = false
+    setOverDismiss(false)
+    setDragging(false)
+    vibrate([20, 40, 30])
+    setHidden(true)
+    setOpen(false)
+    onDismiss?.()
+  }
   const hasHeader = Boolean(title) || Boolean(trailing)
   return (
     <MotionConfig reducedMotion='user'>
@@ -144,16 +157,15 @@ const Bubble = ({
         <AnimatePresence>
           {dragging && dismissible ? (
             <motion.div
-              animate={{ opacity: 1, scale: overDismiss ? 1.25 : 1 }}
+              animate={{ opacity: 1, scale: overDismiss ? 1.3 : 1, y: 0 }}
               className={cn(
-                'pointer-events-none fixed left-1/2 flex -translate-x-1/2 items-center justify-center rounded-full text-white shadow-lg',
-                overDismiss ? 'bg-red-600 shadow-[0_0_32px_rgba(239,68,68,0.55)]' : 'bg-red-500/70'
+                'pointer-events-none fixed bottom-10 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full text-white shadow-lg',
+                overDismiss ? 'bg-red-600 shadow-[0_0_32px_rgba(239,68,68,0.55)]' : 'bg-red-500/75'
               )}
-              exit={{ opacity: 0, scale: 0.6 }}
-              initial={{ opacity: 0, scale: 0.6 }}
-              style={{ bottom: ZONE_BOTTOM - ZONE_SIZE / 2, height: ZONE_SIZE, width: ZONE_SIZE }}
+              exit={{ opacity: 0, y: 60 }}
+              initial={{ opacity: 0, y: 60 }}
               transition={SPRING}>
-              <CloseIcon />
+              <CloseIcon className='size-5' />
             </motion.div>
           ) : null}
         </AnimatePresence>
@@ -215,6 +227,7 @@ const Bubble = ({
               id: e.pointerId,
               ox: e.clientX - x.get(),
               oy: e.clientY - y.get(),
+              samples: [{ t: performance.now(), x: x.get(), y: y.get() }],
               startX: e.clientX,
               startY: e.clientY
             }
@@ -239,7 +252,9 @@ const Bubble = ({
             if (dismissible) {
               const bcx = nx + BUBBLE_SIZE / 2
               const bcy = ny + BUBBLE_SIZE / 2
-              const zdist2 = (bcx - zoneCenter.x) ** 2 + (bcy - zoneCenter.y) ** 2
+              const zdx = bcx - zoneCenter.x
+              const zdy = bcy - zoneCenter.y
+              const zdist2 = zdx * zdx + zdy * zdy
               const inside = zdist2 < DISMISS_RADIUS * DISMISS_RADIUS
               if (inside !== overDismissRef.current) {
                 overDismissRef.current = inside
@@ -254,6 +269,8 @@ const Bubble = ({
             }
             x.set(nx)
             y.set(ny)
+            p.samples.push({ t: performance.now(), x: nx, y: ny })
+            if (p.samples.length > 5) p.samples.shift()
           }}
           onPointerUp={e => {
             const p = pointerRef.current
@@ -264,21 +281,27 @@ const Bubble = ({
               setOpen(prev => !prev)
               return
             }
-            setDragging(false)
-            if (overDismissRef.current) {
-              overDismissRef.current = false
-              setOverDismiss(false)
-              vibrate([20, 40, 30])
-              setHidden(true)
-              onDismiss?.()
+            if (dismissible && overDismissRef.current) {
+              dismiss()
               return
             }
-            const nextDock: 'left' | 'right' = x.get() + BUBBLE_SIZE / 2 < globalThis.innerWidth / 2 ? 'left' : 'right'
+            setDragging(false)
+            overDismissRef.current = false
+            setOverDismiss(false)
+            const now = performance.now()
+            const fallback = p.samples[0] ?? { t: now, x: x.get(), y: y.get() }
+            const first = p.samples.find(s => now - s.t < 80) ?? fallback
+            const last = p.samples.at(-1) ?? fallback
+            const dt = Math.max(1, last.t - first.t)
+            const vx = ((last.x - first.x) / dt) * 1000
+            const vy = ((last.y - first.y) / dt) * 1000
+            const projectedX = x.get() + vx * 0.15
+            const nextDock: 'left' | 'right' = projectedX + BUBBLE_SIZE / 2 < globalThis.innerWidth / 2 ? 'left' : 'right'
             const maxY = globalThis.innerHeight - BUBBLE_SIZE - EDGE_MARGIN
-            const targetY = Math.max(EDGE_MARGIN, Math.min(maxY, y.get()))
+            const targetY = Math.max(EDGE_MARGIN, Math.min(maxY, y.get() + vy * 0.05))
             setDock(nextDock)
-            animate(x, computeRestingX(nextDock), SPRING)
-            animate(y, targetY, SPRING)
+            animate(x, computeRestingX(nextDock), { ...SPRING, velocity: vx })
+            animate(y, targetY, { ...SPRING, velocity: vy })
             storage.set(storageKey, { x: computeRestingX(nextDock), y: targetY })
           }}
           style={{
