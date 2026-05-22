@@ -32,7 +32,7 @@
   "scripts": {
     "build": "tsdown",
     "prepublishOnly": "bun run build",
-    "postpublish": "bunx pm4ai@latest cleanup"
+    "postpublish": "bun ../../tools/prune-versions.ts"
   },
   "dependencies": {
     "clsx": "latest",
