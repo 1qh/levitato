@@ -4,19 +4,18 @@
 'use client'
 import type { ReactNode } from 'react'
 import { animate, AnimatePresence, motion, MotionConfig, useMotionValue } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type { DeepPartial, LevitatoConfig } from './config'
 import type { StorageAdapter } from './storage'
 import { cn } from './cn'
 import { mergeConfig, toSpring } from './config'
+import { restingX, scaleYByViewport } from './geometry'
 import { matchesHotkey } from './hotkey'
 import { localStorageAdapter } from './storage'
 
 const vibrate = (pattern: number | number[]) => {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(pattern)
 }
-const restingX = (dock: 'left' | 'right', size: number, margin: number) =>
-  dock === 'right' ? globalThis.innerWidth - size - margin : margin
 const DefaultIcon = () => (
   <svg aria-hidden='true' fill='currentColor' height='6' viewBox='0 0 24 6' width='22'>
     <circle cx='4' cy='3' r='2' />
@@ -82,9 +81,11 @@ const Bubble = ({
   const [dismissing, setDismissing] = useState(false)
   const [hidden, setHidden] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [, rerenderAfterViewportChange] = useReducer((v: number) => v + 1, 0)
   const overDismissRef = useRef(false)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
+  const viewportRef = useRef({ height: 0, width: 0 })
   const pointerRef = useRef<null | {
     did: boolean
     id: number
@@ -101,11 +102,31 @@ const Bubble = ({
     setDock(initialDock)
     x.set(restingX(initialDock, bubbleSize, edgeMargin))
     y.set(initialY)
+    viewportRef.current = { height: globalThis.innerHeight, width: globalThis.innerWidth }
   }
   useEffect(() => {
     setMounted(true)
     resetPosition()
   }, [bubbleSize, edgeMargin, storage, storageKey, x, y])
+  useEffect(() => {
+    if (!(mounted && visible) || hidden || dragging) return
+    const snapToViewport = () => {
+      const previousHeight = viewportRef.current.height || globalThis.innerHeight
+      const nextX = restingX(dock, bubbleSize, edgeMargin)
+      const nextY = scaleYByViewport({ margin: edgeMargin, previousHeight, size: bubbleSize, value: y.get() })
+      x.set(nextX)
+      y.set(nextY)
+      viewportRef.current = { height: globalThis.innerHeight, width: globalThis.innerWidth }
+      storage.set(storageKey, { x: nextX, y: nextY })
+      rerenderAfterViewportChange()
+    }
+    globalThis.addEventListener('resize', snapToViewport)
+    globalThis.visualViewport?.addEventListener('resize', snapToViewport)
+    return () => {
+      globalThis.removeEventListener('resize', snapToViewport)
+      globalThis.visualViewport?.removeEventListener('resize', snapToViewport)
+    }
+  }, [bubbleSize, dock, dragging, edgeMargin, hidden, mounted, storage, storageKey, visible])
   useEffect(() => {
     if (hotkey === false) return
     const shortcut = (e: KeyboardEvent) => {
