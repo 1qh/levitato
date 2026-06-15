@@ -105,6 +105,7 @@ const Bubble = ({
     viewportRef.current = { height: globalThis.innerHeight, width: globalThis.innerWidth }
   }
   useEffect(() => {
+    // oxlint-disable-next-line react/react-compiler -- canonical client-mount guard; intentional setState in a mount effect
     setMounted(true)
     resetPosition()
   }, [bubbleSize, edgeMargin, storage, storageKey, x, y])
