@@ -4,7 +4,8 @@
   "workspaces": [
     "packages/*",
     "apps/*",
-    "readonly/*"
+    "readonly/*",
+    "readonly/ui"
   ],
   "scripts": {
     "action": "sh up.sh && bun run test",
