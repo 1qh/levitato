@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: effects key off specific deps by design */
-/* eslint-disable @eslint-react/hooks-extra/no-direct-set-state-in-use-effect, react-hooks/exhaustive-deps, complexity */
+/* eslint-disable @eslint-react/set-state-in-effect, @eslint-react/exhaustive-deps, react-hooks/exhaustive-deps, complexity */
+/* eslint-disable @eslint-react/immutability */
 /* oxlint-disable react-perf/jsx-no-new-object-as-prop */
 'use client'
 import type { ReactNode } from 'react'
