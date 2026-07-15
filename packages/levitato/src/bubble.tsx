@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: effects key off specific deps by design */
 /* eslint-disable @eslint-react/set-state-in-effect, @eslint-react/exhaustive-deps, react-hooks/exhaustive-deps, complexity */
-/* eslint-disable @eslint-react/immutability */
+/* eslint-disable @eslint-react/immutability -- a motion value is an external animation store, and set() is its designed imperative api, so every write reads as a captured-local mutation to the purity model */
 /* oxlint-disable react-perf/jsx-no-new-object-as-prop */
 'use client'
 import type { ReactNode } from 'react'
