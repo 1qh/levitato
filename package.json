@@ -1,5 +1,6 @@
 {
   "private": true,
+  "description": "levitato monorepo — floating/levitating UI bubble React component with docs",
   "type": "module",
   "workspaces": [
     "packages/*",
@@ -27,7 +28,7 @@
     "@tailwindcss/typography": "latest",
     "@testing-library/react": "latest",
     "@turbo/gen": "latest",
-    "lintmax": "latest",
+    "lintmax": "^0.1.82",
     "playwright-core": "latest",
     "react": "latest",
     "react-dom": "latest",

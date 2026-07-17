@@ -16,6 +16,7 @@
   },
   "license": "MIT",
   "author": "1qh",
+  "sideEffects": false,
   "type": "module",
   "exports": {
     ".": {
@@ -26,8 +27,7 @@
   "main": "dist/index.mjs",
   "types": "dist/index.d.mts",
   "files": [
-    "dist",
-    "LICENSE"
+    "dist"
   ],
   "scripts": {
     "build": "tsdown",

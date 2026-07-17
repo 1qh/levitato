@@ -46,6 +46,10 @@ interface BubbleProps {
   trailing?: ReactNode
   visible?: boolean
 }
+const originClassOf = (dockRight: boolean, wantBottom: boolean): string => {
+  if (dockRight) return wantBottom ? 'origin-bottom-right' : 'origin-top-right'
+  return wantBottom ? 'origin-bottom-left' : 'origin-top-left'
+}
 const Bubble = ({
   children,
   className,
@@ -62,6 +66,7 @@ const Bubble = ({
   title,
   trailing,
   visible = true
+  // eslint-disable-next-line sonarjs/cognitive-complexity -- Bubble wires drag/dock/spring/dismiss interaction state; the branching is inherent floating-bubble orchestration
 }: BubbleProps) => {
   const cfg = useMemo(() => mergeConfig(config), [config])
   const { bubbleSize, dismiss: dismissCfg, dragThresholdPx, edgeMargin, popover, springs } = cfg
@@ -169,14 +174,7 @@ const Bubble = ({
   const popoverVertical = wantBottom
     ? { bottom: Math.max(edgeMargin, globalThis.innerHeight - y.get() - bubbleSize) }
     : { top: Math.max(edgeMargin, Math.min(globalThis.innerHeight - 280, y.get())) }
-  const originClass =
-    dock === 'right'
-      ? wantBottom
-        ? 'origin-bottom-right'
-        : 'origin-top-right'
-      : wantBottom
-        ? 'origin-bottom-left'
-        : 'origin-top-left'
+  const originClass = originClassOf(dock === 'right', wantBottom)
   const zoneCenter = { x: globalThis.innerWidth / 2, y: globalThis.innerHeight - 70 }
   const dismiss = () => {
     overDismissRef.current = false
